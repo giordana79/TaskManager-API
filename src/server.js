@@ -11,6 +11,7 @@ import { connectDB } from "./config/db.js"; // funzione di connessione DB
 import { logger, stream } from "./utils/logger.js"; // logger/winston + stream per morgan
 import authRoutes from "./routes/auth.routes.js";
 import { auth } from "./middleware/auth.js"; //rotta temporanea
+import taskRoutes from "./routes/task.routes.js";
 
 // carica le variabili d'ambiente dal file .env nella root
 dotenv.config(); // legge .env e popola process.env
@@ -62,7 +63,7 @@ const startServer = async () => {
 
   // esempio: route placeholder per future rotte (auth/tasks)
   app.use("/api/auth", authRoutes);
-  // app.use('/api/tasks', taskRoutes);
+  app.use("/api/tasks", taskRoutes);
 
   // Rotta protetta di test per verificare il middleware JWT
   app.get("/api/protected", auth, (req, res) => {
