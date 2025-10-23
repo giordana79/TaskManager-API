@@ -1,26 +1,30 @@
 import express from "express";
+import authMiddleware from "../middleware/auth.js";
 import * as taskController from "../controllers/task.controller.js";
+import { upload } from "../config/multer.js";
 import { validate } from "../middleware/validate.js";
-import { auth } from "../middleware/auth.js";
-import { taskSchema } from "../validation/task.validation.js";
+import {
+  createTaskSchema,
+  updateTaskSchema,
+} from "../validation/task.validation.js";
 
 const router = express.Router();
 
-/*
- * Tutte le rotte dei task sono protette da JWT.
- * Si usa `auth` prima di accedere al controller.
- */
+router.use(authMiddleware);
 
-// Crea un nuovo task
-router.post("/", auth, validate(taskSchema), taskController.createTask);
+// CRUD
+router.get("/", taskController.getTasks);
+router.post("/", validate(createTaskSchema), taskController.createTask);
+router.patch("/:id", validate(updateTaskSchema), taskController.updateTask);
+router.delete("/:id", taskController.deleteTask);
 
-// Ottiene tutti i task dell’utente
-router.get("/", auth, taskController.getTasks);
-
-// Aggiorna un task
-router.patch("/:id", auth, validate(taskSchema), taskController.updateTask);
-
-// Elimina un task
-router.delete("/:id", auth, taskController.deleteTask);
+// Upload file
+//router.post("/:id/upload", upload.single("file"), taskController.uploadFile);
+router.post(
+  "/:id/upload",
+  authMiddleware,
+  upload.single("file"),
+  taskController.uploadFile
+);
 
 export default router;

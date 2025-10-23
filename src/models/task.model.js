@@ -1,31 +1,20 @@
+// Modello Task
+
 import mongoose from "mongoose";
 
-// Definizione dello schema del Task
 const taskSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true, // il titolo è obbligatorio
-      trim: true, // rimuove spazi in eccesso
-    },
-    description: {
-      type: String,
-      default: "", // campo facoltativo
-    },
-    completed: {
-      type: Boolean,
-      default: false, // di default un task è "non completato"
-    },
+    title: { type: String, required: true, trim: true },
+    description: { type: String, default: "" },
+    completed: { type: Boolean, default: false },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // riferimento al modello User
-      required: true, // ogni task deve appartenere a un utente
+      ref: "User",
+      required: true,
     },
+    file: { type: String, default: null }, // nome file salvato in uploads/
   },
-  {
-    timestamps: true, // aggiunge createdAt e updatedAt
-  }
+  { timestamps: true }
 );
 
-// Esporta il modello
-export const Task = mongoose.model("Task", taskSchema);
+export default mongoose.model("Task", taskSchema);

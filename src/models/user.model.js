@@ -1,61 +1,35 @@
-// import mongoose per definire lo schema e bcryptjs per hash password
+// Modello User
+
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-// crea lo schema User con campi base: name, email, password e timestamps
+// Schema utente
 const userSchema = new mongoose.Schema(
   {
-    name: {
-      type: String, // nome utente (opzionale/obbligatorio a scelta)
-      trim: true, // rimuove spazi iniziali/finali
-      default: "", // valore di default vuoto
-    },
+    name: { type: String, trim: true, default: "" },
     email: {
-      type: String, // email utente
-      required: true, // campo obbligatorio
-      unique: true, // valore unico nella collezione
-      lowercase: true, // memorizza in minuscolo
-      trim: true, // rimuove spazi in eccesso
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
     },
-    password: {
-      type: String, // password hashata
-      required: true, // obbligatoria (al momento della registrazione)
-    },
+    password: { type: String, required: true },
   },
-  {
-    timestamps: true, // aggiunge createdAt e updatedAt
-  }
+  { timestamps: true }
 );
 
-/*
- * Pre-save hook: prima di salvare un documento user su 'save',
- * se la password è stata modificata la si hashia con bcrypt.
- * Si usa function(){} per avere accesso a `this`.
- */
+// Pre-save: hash password
 userSchema.pre("save", async function (next) {
-  // `this` è il documento user
-  const user = this;
-
-  // se la password non è stata modificata, prosegue senza re-hash
-  if (!user.isModified("password")) return next();
-
-  try {
-    // genera un salt e poi hasha la password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(user.password, salt);
-    return next();
-  } catch (err) {
-    return next(err);
-  }
+  if (!this.isModified("password")) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
-/*
- * Metodo istanza per verificare password in fase di login.
- * Restituisce true se la password in chiaro corrisponde all'hash.
- */
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+// Metodo istanza per comparare password
+userSchema.methods.comparePassword = function (candidate) {
+  return bcrypt.compare(candidate, this.password);
 };
 
-// esporta il modello Mongoose 'User'
-export const User = mongoose.model("User", userSchema);
+export default mongoose.model("User", userSchema);

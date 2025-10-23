@@ -1,0 +1,271 @@
+openapi: 3.1.0
+info:
+  title: Task Manager API
+  description: API per gestione utenti, autenticazione e task con upload file
+  version: "1.0.0"
+servers:
+  - url: http://localhost:3000/api
+    description: Server locale
+tags:
+  - name: Auth
+    description: Rotte di autenticazione
+  - name: Tasks
+    description: CRUD e upload file
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registrazione utente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  example: Mario Rossi
+                email:
+                  type: string
+                  format: email
+                  example: mario@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        "201":
+          description: Utente creato
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        example: 650a1b2c3d4e5f6a7b8c9d0e
+                      name:
+                        type: string
+                        example: Mario Rossi
+                      email:
+                        type: string
+                        example: mario@example.com
+        "409":
+          description: Email già registrata
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login utente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: mario@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        "200":
+          description: Login riuscito
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR...
+                  user:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        example: 650a1b2c3d4e5f6a7b8c9d0e
+                      name:
+                        type: string
+                        example: Mario Rossi
+                      email:
+                        type: string
+                        example: mario@example.com
+
+  /tasks:
+    get:
+      tags: [Tasks]
+      summary: Lista task utente
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lista dei task
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      tags: [Tasks]
+      summary: Crea un nuovo task
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Task creato
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    patch:
+      tags: [Tasks]
+      summary: Aggiorna un task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "200":
+          description: Task aggiornato
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    delete:
+      tags: [Tasks]
+      summary: Elimina un task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task eliminato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Task eliminato
+
+  /tasks/{id}/upload:
+    post:
+      tags: [Tasks]
+      summary: Upload file associato a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: File caricato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: File caricato con successo
+                  data:
+                    $ref: "#/components/schemas/Task"
+
+components:
+  schemas:
+    Task:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        completed:
+          type: boolean
+        file:
+          type: string
+          nullable: true
+        owner:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+    TaskInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        completed:
+          type: boolean
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

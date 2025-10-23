@@ -1,19 +1,16 @@
-// Joi per schemi di validazione
+// Schemi Joi per autenticazione
+
 import Joi from "joi";
 
-// schema per la registrazione: email obbligatoria + password >= 6 + name opzionale
+// Registrazione
 export const registerSchema = Joi.object({
-  name: Joi.string().max(100).allow("").optional(), // nome opzionale
-  email: Joi.string()
-    .email({ tlds: { allow: false } })
-    .required(), // email valida
-  password: Joi.string().min(6).required(), // password min 6 caratteri
+  name: Joi.string().min(2).max(100).required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
 });
 
-// schema per il login: email + password obbligatorie
+// Login
 export const loginSchema = Joi.object({
-  email: Joi.string()
-    .email({ tlds: { allow: false } })
-    .required(),
-  password: Joi.string().required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
 });

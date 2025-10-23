@@ -1,73 +1,44 @@
-/*
- * Service layer per logiche di autenticazione.
- * Qui si inseiscono le operazioni DB/complesse così i controller restano snelli.
- */
+// Logica business autenticazione
 
-import { User } from "../models/user.model.js";
+import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+import AppError from "../utils/AppError.js";
 
-// funzione per creare un nuovo utente (assume che  password hashing sia gestito dal pre-save del modello)
+// Registrazione
 export const registerUser = async ({ name, email, password }) => {
-  // verifica esistenza utente con la stessa email
   const existing = await User.findOne({ email });
-  if (existing) {
-    const err = new Error("Email già registrata");
-    err.status = 409; // conflict
-    throw err;
-  }
+  if (existing) throw new AppError("Email già registrata", 409);
 
-  // crea e salva il nuovo utente (pre-save hook hasherà la password)
   const user = new User({ name, email, password });
   await user.save();
 
-  // non restituire la password
-  const userObj = user.toObject();
-  delete userObj.password;
-  return userObj;
+  const obj = user.toObject();
+  delete obj.password; // non restituire password
+  return obj;
 };
 
-// funzione per autenticare utente e generare JWT
+// Login
 export const loginUser = async ({ email, password }) => {
-  // cerca user per email
   const user = await User.findOne({ email });
-  if (!user) {
-    const err = new Error("Email o password non corretti");
-    err.status = 401;
-    throw err;
-  }
+  if (!user) throw new AppError("Email o password non corretti", 401);
 
-  // confronta password (metodo istanza definito nello schema)
   const isMatch = await user.comparePassword(password);
-  if (!isMatch) {
-    const err = new Error("Email o password non corretti");
-    err.status = 401;
-    throw err;
-  }
+  if (!isMatch) throw new AppError("Email o password non corretti", 401);
 
-  // genera token JWT: includi userId e email; imposta expiry (es. 7d)
   const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    const err = new Error("JWT secret non configurato");
-    err.status = 500;
-    throw err;
-  }
+  if (!secret) throw new AppError("JWT_SECRET non configurato", 500);
 
-  const payload = {
-    userId: user._id.toString(),
-    email: user.email,
-  };
+  const token = jwt.sign({ id: user._id, email: user.email }, secret, {
+    expiresIn: "7d",
+  });
 
-  // firma il token (duration: 7 giorni)
-  const token = jwt.sign(payload, secret, { expiresIn: "7d" });
+  const obj = user.toObject();
+  delete obj.password;
 
-  // ritorna info utente senza password + token
-  const userObj = user.toObject();
-  delete userObj.password;
-
-  return { user: userObj, token };
+  return { user: obj, token };
 };
 
-// funzione utility per cercare utente per id
+// Trova user by ID
 export const findUserById = async (id) => {
   return User.findById(id).select("-password");
 };

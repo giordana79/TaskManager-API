@@ -1,43 +1,25 @@
-/*
- * Controller Express per le rotte auth.
- * Riceve req/res e richiama il service; si occupa solo di orchestrazione.
- */
-
+import logger from "../config/logger.js";
+import AppError from "../utils/AppError.js";
 import * as authService from "../services/auth.service.js";
 
-// POST /api/auth/register
+// Registrazione
 export const register = async (req, res, next) => {
   try {
-    // i dati sono già 'clean' grazie al middleware validate
-    const { name, email, password } = req.body;
-
-    // chiama il service per creare l'utente
-    const createdUser = await authService.registerUser({
-      name,
-      email,
-      password,
-    });
-
-    // risponde 201 created con l'utente (nota: non include la password)
-    return res.status(201).json({ user: createdUser });
+    const user = await authService.registerUser(req.body);
+    logger.info(`Nuovo utente registrato: ${user.email}`);
+    res.status(201).json({ success: true, user });
   } catch (err) {
-    // se il service ha impostato err.status, si usa; altrimenti fallback 500
-    return next(err);
+    next(err);
   }
 };
 
-// POST /api/auth/login
+// Login
 export const login = async (req, res, next) => {
   try {
-    // dati 'clean' dal validate
-    const { email, password } = req.body;
-
-    // chiama il service per autenticare e ottenere token
-    const { user, token } = await authService.loginUser({ email, password });
-
-    // risponde con user + token
-    return res.status(200).json({ user, token });
+    const result = await authService.loginUser(req.body);
+    logger.info(`Utente loggato: ${result.user.email}`);
+    res.json({ success: true, ...result });
   } catch (err) {
-    return next(err);
+    next(err);
   }
 };

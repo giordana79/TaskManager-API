@@ -1,29 +1,21 @@
-// import mongoose per la connessione a MongoDB
+// Connessione a MongoDB con mongoose
+
 import mongoose from "mongoose";
+import logger from "./logger.js";
 
-// funzione che stabilisce la connessione a MongoDB usando MONGO_URI
-export const connectDB = async () => {
+const connectDB = async () => {
   try {
-    // legge la variabile di ambiente MONGO_URI (settata in .env)
-    const uri = process.env.MONGO_URI;
+    const uri = process.env.MONGO_URI; // prendo URI dal .env
+    if (!uri) throw new Error("MONGO_URI non impostata in .env");
 
-    // se manca la URI logga e termina l'app
-    if (!uri) {
-      console.error("MONGO_URI non impostata. Controlla il file .env");
-      process.exit(1);
-    }
+    // Connessione a MongoDB (opzioni moderne Mongoose 7 non necessarie)
+    await mongoose.connect(uri);
 
-    // si connette a MongoDB con opzioni consigliate
-    await mongoose.connect(uri, {
-      // opzioni moderne: mongoose 6+ non richiede più useNewUrlParser ecc ma è OK metterle
-      // mantenute al default per chiarezza; qui si lasciano oggetti vuoti per mantenere compatibilità.
-    });
-
-    // se la connessione va a buon fine, avvisa in console
-    console.log("🚀 MongoDB connesso");
-  } catch (error) {
-    // log dell'errore e chiusura dell'app se la connessione fallisce
-    console.error("💥 Errore di connessione a MongoDB:", error.message);
-    process.exit(1);
+    logger.info("✅ MongoDB connesso"); // log su console e file
+  } catch (err) {
+    logger.error("Errore connessione MongoDB: " + err.message);
+    process.exit(1); // chiude il server se DB non raggiungibile
   }
 };
+
+export default connectDB;
