@@ -120,3 +120,19 @@ Mostra tutte le rotte /auth e /tasks con esempi di request/response.
 E' possibile fare il try-it-out direttamente dalla UI.
 
 /api/docs sarà disponibile prima di qualsiasi routing logico e interferisce con logging, auth o middleware esistenti
+
+---
+
+Per il deploy:
+
+[Render](https://taskmanager-api-mx5y.onrender.com)
+
+[Railway](https://taskmanager-api-production-a254.up.railway.app)
+
+[Render-Swagger UI](https://taskmanager-api-mx5y.onrender.com/api/docs)
+
+[Railway-Swagger UI](https://taskmanager-api-production-a254.up.railway.app/api/docs)
+
+[Render-check_health](https://taskmanager-api-mx5y.onrender.com/api/health)
+
+[Railway-check_health](https://taskmanager-api-production-a254.up.railway.app/api/health)
