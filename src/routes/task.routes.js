@@ -8,6 +8,7 @@ import {
   updateTaskSchema,
 } from "../validation/task.validation.js";
 
+// Rotta protetta — serve il token JWT
 const router = express.Router();
 
 router.use(authMiddleware);

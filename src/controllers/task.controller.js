@@ -20,8 +20,10 @@ export const createTask = async (req, res, next) => {
   try {
     const task = await taskService.createTask(req.user.id, req.body);
     logger.info(`Task creato ${task._id} da ${req.user.id}`);
+    // Risposta al client
     res.status(201).json(task);
   } catch (err) {
+    // Passa l’errore al middleware globale
     next(err);
   }
 };
