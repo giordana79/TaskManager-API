@@ -25,7 +25,7 @@ const authMiddleware = async (req, res, next) => {
     const user = await User.findById(payload.id).select("-password");
     if (!user) return next(new AppError("Utente non trovato", 401));
 
-    req.user = { id: user._id.toString(), email: user.email };
+    req.user = { id: user._id.toString(), email: user.email, role: user.role };
     next();
   } catch (err) {
     next(err);

@@ -107,7 +107,7 @@ Server in ascolto su: http://localhost:3000
 
 Installare la seguente dipendenza:
 
-(non va con la versione 19 di Joy installare la 17 risulta la più stabile)
+(non va con la versione 19 di Joi installare la 17 risulta la più stabile)
 
 - npm install swagger-ui-express yamljs
 
@@ -186,3 +186,31 @@ project-root/
 | Utils      | /utils/                | Funzioni di supporto riutilizzabili, come AppError.js                                      | AppError.js                                                |
 | Validation | /validation/           | Definisce schemi Joi per la validazione di input in modo centralizzato                     | auth.validation.js, task.validation.js                     |
 | Docs       | /docs/                 | Contiene la documentazione OpenAPI (openapi.yaml)                                          | openapi.yaml                                               |
+
+---
+
+### Dashboard Admin (ruoli e permessi)
+
+- Gli utenti hanno un ruolo (user o admin)
+
+- Middleware isAdmin protegge le rotte admin.
+
+- Rotte /api/admin/users, /api/admin/tasks, /api/admin/users/:id disponibili solo agli admin.
+
+### Admin routes
+
+GET /api/admin/users → lista utenti
+
+GET /api/admin/tasks → lista tutti i task
+
+DELETE /api/admin/users/:id → elimina utente
+
+Tutte richiedono JWT admin nell’header Authorization.
+
+---
+
+Questo comando si esegue all'interno della cartella del backend
+
+- node createAdmin.js
+
+  questo script serve per creare un utente con il ruolo di admin già hashato in MongoDB (nella root lato backend), poichè permettere agli utenti di scegliere role dal frontend può essere un rischio di sicurezza. Meglio creare admin solo tramite script o direttamente in DB.

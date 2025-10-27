@@ -17,6 +17,9 @@ import { requestLogger } from "./middleware/loggerMiddleware.js";
 import errorHandler from "./middleware/errorHandler.js";
 import authMiddleware from "./middleware/auth.js";
 
+import adminRoutes from "./routes/admin.routes.js";
+import { fileURLToPath } from "url";
+
 // Swagger UI
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
@@ -42,6 +45,12 @@ app.use(express.json());
 // Logger richieste
 app.use(requestLogger);
 
+// SERVE STATICAMENTE LA CARTELLA UPLOADS
+// Permette al browser di accedere a /uploads/<nomefile>
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 // SWAGGER UI
 
 // Carica OpenAPI YAML
@@ -61,9 +70,7 @@ const authLimiter = rateLimit({
 });
 app.use("/api/auth", authLimiter);
 
-// ====================
 // ROTTE STATICHE
-// ====================
 
 // Servire file upload statici
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
@@ -75,6 +82,9 @@ app.use("/api/auth", authRoutes);
 
 // Task CRUD + upload
 app.use("/api/tasks", taskRoutes);
+
+//Registrare le rotte nel server
+app.use("/api/admin", adminRoutes);
 
 // Healthcheck
 app.get("/api/health", (req, res) =>
