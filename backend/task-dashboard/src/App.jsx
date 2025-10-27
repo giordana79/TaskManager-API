@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AuthForm from "./components/AuthForm";
 import Dashboard from "./components/Dashboard";
-import AdminDashboard from "./components/AdminDashboard";
-
 import { getProfile } from "./lib/api";
 import "./styles.css";
 
@@ -17,7 +15,6 @@ export default function App() {
   const [loadingUser, setLoadingUser] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [message, setMessage] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   // applica classe tema al body
   useEffect(() => {
@@ -30,21 +27,18 @@ export default function App() {
     const init = async () => {
       if (!token) {
         setUser(null);
-        setIsAdmin(false);
         return;
       }
       setLoadingUser(true);
       try {
         const profile = await getProfile(token);
         setUser(profile);
-        setIsAdmin(profile.role === "admin"); // ← controllo admin
       } catch (err) {
         // token non valido o scaduto: rimuovilo e mostra messaggio
         setMessage("Token non valido o scaduto. Effettua nuovamente il login.");
         setToken(null);
         localStorage.removeItem("token");
         setUser(null);
-        setIsAdmin(false);
       } finally {
         setLoadingUser(false);
       }
@@ -79,42 +73,24 @@ export default function App() {
           >
             {theme === "light" ? "🌙" : "☀️"}
           </button>
-          {user && (
+          {user ? (
             <div className="user-block">
               <span className="user-email">{user.email}</span>
-              {user.role === "admin" && (
-                <a
-                  href="/admin"
-                  className="btn"
-                  style={{ marginLeft: "0.5rem" }}
-                >
-                  Admin-Dashboard
-                </a>
-              )}
               <button className="btn" onClick={handleLogout}>
                 Logout
               </button>
             </div>
-          )}
+          ) : null}
         </div>
       </header>
 
       <main className="app-main">
         {message && <div className="info error">{message}</div>}
-        {window.location.pathname === "/admin" && user?.role === "admin" ? (
-          <AdminDashboard token={token} />
-        ) : !token ? (
+
+        {!token ? (
           <AuthForm onSignIn={handleSignIn} setMessage={setMessage} />
         ) : loadingUser ? (
           <div>Caricamento profilo...</div>
-        ) : isAdmin ? (
-          <AdminDashboard
-            token={token}
-            onUnauthenticated={() => {
-              setMessage("Sessione scaduta, effettua il login.");
-              handleLogout();
-            }}
-          />
         ) : (
           <Dashboard
             token={token}
@@ -125,6 +101,7 @@ export default function App() {
           />
         )}
       </main>
+
       <footer className="app-footer">
         <small>© 2025 Task Dashboard</small>
       </footer>

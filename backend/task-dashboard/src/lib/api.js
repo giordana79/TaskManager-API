@@ -53,17 +53,11 @@ async function request(
 }
 
 /* Auth */
-/* Auth */
 export const register = (payload) =>
   request("/auth/register", { method: "POST", body: payload });
-
 export const login = (payload) =>
   request("/auth/login", { method: "POST", body: payload });
-
-export const getProfile = async (token) => {
-  const data = await request("/protected", { token });
-  return data.user; // ✅ così React riceve direttamente il profilo
-};
+export const getProfile = (token) => request("/protected", { token }); // se non hai /auth/me, usa /api/protected o implementa endpoint
 
 /* Tasks */
 export const fetchTasks = (token) => request("/tasks", { token });
@@ -80,5 +74,3 @@ export const uploadFileToTask = (token, id, file) => {
   form.append("file", file);
   return request(`/tasks/${id}/upload`, { token, method: "POST", body: form });
 };
-
-export { request };
