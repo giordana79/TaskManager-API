@@ -1,94 +1,73 @@
-// Entry point server Express
-import express from "express";
+//IMPORTANTE: dotenv DEVE essere la prima cosa!
 import dotenv from "dotenv";
+dotenv.config(); // Carica .env SUBITO
+
+// Ora gli altri import possono leggere process.env
+import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
+import swaggerUi from "swagger-ui-express";
+import YAML from "yamljs";
 
+// Config e middleware
 import connectDB from "./config/db.js";
 import logger from "./config/logger.js";
-
-import authRoutes from "./routes/auth.routes.js";
-import taskRoutes from "./routes/task.routes.js";
-
 import { requestLogger } from "./middleware/loggerMiddleware.js";
 import errorHandler from "./middleware/errorHandler.js";
 import authMiddleware from "./middleware/auth.js";
 
+// Routes
+import authRoutes from "./routes/auth.routes.js";
+import taskRoutes from "./routes/task.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
-import { fileURLToPath } from "url";
-
-// Swagger UI
-import swaggerUi from "swagger-ui-express";
-import YAML from "yamljs";
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // MIDDLEWARE GLOBALI
-
-// Sicurezza HTTP headers
 app.use(helmet());
-
-// CORS
 app.use(
-  cors({ origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000" })
+  cors({
+    origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000",
+  })
 );
-
-// Parser JSON
 app.use(express.json());
-
-// Logger richieste
 app.use(requestLogger);
 
 // SERVE STATICAMENTE LA CARTELLA UPLOADS
-// Permette al browser di accedere a /uploads/<nomefile>
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // SWAGGER UI
-
-// Carica OpenAPI YAML
 const swaggerDocument = YAML.load(
   path.join(process.cwd(), "docs", "openapi.yaml")
 );
-
-// Servi Swagger UI su /api/docs
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // RATE LIMIT
-
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
-  max: 100, // max 100 richieste
+  max: 100,
   message: "Troppe richieste, riprova più tardi",
 });
 app.use("/api/auth", authLimiter);
 
-// ROTTE STATICHE
-
-// Servire file upload statici
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
 // ROTTE API
-
-// Autenticazione
 app.use("/api/auth", authRoutes);
-
-// Task CRUD + upload
 app.use("/api/tasks", taskRoutes);
-
-//Registrare le rotte nel server
 app.use("/api/admin", adminRoutes);
 
 // Healthcheck
 app.get("/api/health", (req, res) =>
-  res.json({ status: "ok", env: process.env.NODE_ENV || "development" })
+  res.json({
+    status: "ok",
+    env: process.env.NODE_ENV || "development",
+  })
 );
 
 // Rotta protetta di test
@@ -96,16 +75,13 @@ app.get("/api/protected", authMiddleware, (req, res) => {
   res.json({ msg: "Sei autenticato!", user: req.user });
 });
 
-// ERROR HANDLER
-
-// Deve essere sempre ultimo middleware
+// ERROR HANDLER (sempre ultimo)
 app.use(errorHandler);
 
 // AVVIO SERVER
-
 const start = async () => {
   try {
-    await connectDB(); // connessione DB
+    await connectDB();
 
     // Creazione uploads se non esiste
     const uploadDir = path.join(process.cwd(), "uploads");
@@ -113,7 +89,9 @@ const start = async () => {
 
     app.listen(PORT, () =>
       logger.info(
-        `🚀 Server avviato su http://localhost:${PORT} (env: ${process.env.NODE_ENV})`
+        `🚀 Server avviato su http://localhost:${PORT} (env: ${
+          process.env.NODE_ENV || "development"
+        })`
       )
     );
   } catch (err) {

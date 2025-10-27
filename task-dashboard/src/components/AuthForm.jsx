@@ -1,13 +1,8 @@
 import React, { useState } from "react";
 import { login, register } from "../lib/api";
 
-/**
- * AuthForm mostra tab per login/registrazione.
- * - Quando login/registrazione avviene, chiama onSignIn(token, user)
- * - Salva token nel localStorage tramite App.onSignIn
- */
 export default function AuthForm({ onSignIn, setMessage }) {
-  const [tab, setTab] = useState("login"); // 'login' | 'register'
+  const [tab, setTab] = useState("login");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
@@ -23,21 +18,20 @@ export default function AuthForm({ onSignIn, setMessage }) {
           email: form.email,
           password: form.password,
         });
-        // api expected to return { user, token }
-        onSignIn(data.token, data.user);
+        // Passa accessToken (non token)
+        onSignIn(data.accessToken, data.user);
       } else {
-        // register expects back user (without token), then automatically login
+        // Register poi auto-login
         await register({
           name: form.name,
           email: form.email,
           password: form.password,
         });
-        // do auto-login for UX
         const data = await login({
           email: form.email,
           password: form.password,
         });
-        onSignIn(data.token, data.user);
+        onSignIn(data.accessToken, data.user);
       }
       setMessage(null);
     } catch (err) {
@@ -107,6 +101,18 @@ export default function AuthForm({ onSignIn, setMessage }) {
             {loading ? "..." : tab === "login" ? "Accedi" : "Registrati"}
           </button>
         </div>
+
+        {/* Link per password dimenticata */}
+        {tab === "login" && (
+          <div style={{ marginTop: "1rem", textAlign: "center" }}>
+            <a
+              href="/forgot-password"
+              style={{ fontSize: "0.9rem", color: "var(--primary)" }}
+            >
+              Password dimenticata?
+            </a>
+          </div>
+        )}
       </form>
     </div>
   );

@@ -1,31 +1,31 @@
-// Middleware per proteggere rotte con JWT
-
 import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
 import AppError from "../utils/AppError.js";
+import User from "../models/user.model.js";
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const header = req.headers.authorization; // leggo header Authorization
-    if (!header || !header.startsWith("Bearer "))
-      return next(new AppError("Token mancante o formato non valido", 401));
+    const authHeader = req.headers.authorization;
 
-    const token = header.split(" ")[1]; // estraggo token
-    const secret = process.env.JWT_SECRET;
-    if (!secret) return next(new AppError("JWT_SECRET non configurato", 500));
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return next(new AppError("Token di autenticazione mancante", 401));
+    }
+
+    const token = authHeader.split(" ")[1];
 
     let payload;
     try {
-      payload = jwt.verify(token, secret); // verifico token
-    } catch {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
       return next(new AppError("Token non valido o scaduto", 401));
     }
 
-    // carico utente e attacco info minime a req.user
-    const user = await User.findById(payload.id).select("-password");
+    // Recupera utente
+    const user = await User.findById(payload.id).select(
+      "-password -refreshTokens"
+    );
     if (!user) return next(new AppError("Utente non trovato", 401));
 
-    req.user = { id: user._id.toString(), email: user.email, role: user.role };
+    req.user = user; // aggiunge info utente alla request
     next();
   } catch (err) {
     next(err);

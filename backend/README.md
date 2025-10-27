@@ -203,14 +203,156 @@ GET /api/admin/users → lista utenti
 
 GET /api/admin/tasks → lista tutti i task
 
-DELETE /api/admin/users/:id → elimina utente
+DELETE /api/admin/users/:id → elimina utente con id
+
+DELETE /api/admin/tasks/:id → elimina tasks con id
+
+PATCH /api/admin/tasks/:id → modifica tasks con id
+
+POST /api/admin/tasks/:id/upload → upload tasks con id
 
 Tutte richiedono JWT admin nell’header Authorization.
 
 ---
+
+#### N.B.
 
 Questo comando si esegue all'interno della cartella del backend
 
 - node createAdmin.js
 
   questo script serve per creare un utente con il ruolo di admin già hashato in MongoDB (nella root lato backend), poichè permettere agli utenti di scegliere role dal frontend può essere un rischio di sicurezza. Meglio creare admin solo tramite script o direttamente in DB.
+
+---
+
+### Servizio email gratuito
+
+**Installa dipendenza:**
+
+- cd backend
+- npm install nodemailer
+
+**Configura email nel .env**
+
+Mailtrap per iniziare gratuito e semplice:
+
+Vai su https://mailtrap.io
+
+Registrati
+
+Copia le credenziali SMTP
+
+---
+
+**Test Login con Refresh Token**
+
+1. Apri http://localhost:5173
+
+2. Registra un nuovo utente o fai login
+
+3. Apri DevTools (F12) > Application > Local Storage
+
+Verifica che ci siano:
+
+- accessToken (token corto)
+- refreshToken (token lungo)
+
+**Test Access Token**
+
+```
+GET http://localhost:3000/api/tasks
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZmZkZWRlNzhhYmIyZjU4NTUwNDkxNiIsImVtYWlsIjoicGFvbG9AZ21haWwuY29tIiwiaWF0IjoxNzYxNTk5MTk4LCJleHAiOjE3NjE2MDAwOTh9.7lLPNNRnCVv4MFK6l6HzJjeYXr6lWiGxz3k77rtjlDE
+```
+
+Restituisce i task di Paolo
+
+**Test Refresh Token**
+
+```
+POST http://localhost:3000/api/auth/refresh
+Content-Type: application/json
+
+{
+  "success": true,
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZmZkZWRlNzhhYmIyZjU4NTUwNDkxNiIsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzYxNTk5MTk4LCJleHAiOjE3NjIyMDM5OTh9.qCLsvJny_gbZ8XRWK7Oe0lhRORnQSOV7RlPYNOf8ULY"
+}
+```
+
+Restituisce un nuovo accessToken
+
+**Test Password Reset**
+
+```
+POST http://localhost:3000/api/auth/request-reset
+Content-Type: application/json
+
+{
+  "email": "paolo@gmail.com"
+}
+```
+
+Response:
+
+```
+{
+    "success": true,
+    "message": "Email di reset inviata con successo"
+}
+```
+
+Controlla Mailtrap per l'email
+
+Controlla Mailtrap:
+
+1. Vai su https://mailtrap.io/inboxes
+2. Dovresti vedere l'email "Reset Password - Task Dashboard"
+3. Apri l'email e copia il token dall'URL
+
+Il link sarà del tipo:
+
+```
+http://localhost:5173/reset-password?token=040f0759065f6366c32d0efddaab7fc344823f5e0cc7165822bcb9195a87a246
+```
+
+oppure dalla email copia il token:
+
+1. Copia il token dall'email
+2. Usa questo endpoint:
+
+```
+POST http://localhost:3000/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "040f0759065f6366c32d0efddaab7fc344823f5e0cc7165822bcb9195a87a246",
+  "newPassword": "nuovapassword123"
+}
+```
+
+---
+
+**Test Frontend**
+
+Vai su http://localhost:5173 e prova:
+
+1. Registrazione → Dovresti essere loggato automaticamente
+2. Logout → Click su "Logout"
+3. Login → Riprova a fare login
+4. Password dimenticata → Click sul link e testa il flusso
+
+**Verifica localStorage**
+
+Apri DevTools (F12) > Application > Local Storage > http://localhost:5173
+
+Si dovrebbe vedere:
+
+- accessToken → il token breve
+- refreshToken → il token lungo
+
+**Note**
+
+- accessToken scade in 15 minuti → dopo dovrai usare refresh
+- refreshToken scade in 7 giorni → dopo dovrai fare login di nuovo
+- Il frontend gestisce automaticamente il refresh quando accessToken scade
+
+---

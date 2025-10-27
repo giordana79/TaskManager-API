@@ -1,3 +1,4 @@
+// AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
 import {
   fetchAdminUsers,
@@ -9,6 +10,12 @@ import {
 import AdminUserList from "./AdminUserList";
 import AdminTaskList from "./AdminTaskList";
 
+/**
+ * AdminDashboard:
+ * - Carica utenti e task admin
+ * - Gestisce cancellazioni e upload file
+ * - Chiama onUnauthenticated() se riceve 401
+ */
 export default function AdminDashboard({ token, onUnauthenticated }) {
   const [users, setUsers] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -16,6 +23,10 @@ export default function AdminDashboard({ token, onUnauthenticated }) {
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
+    if (!token) return;
+
+    let mounted = true;
+
     const load = async () => {
       setLoading(true);
       try {
@@ -23,37 +34,56 @@ export default function AdminDashboard({ token, onUnauthenticated }) {
           fetchAdminUsers(token),
           fetchAdminTasks(token),
         ]);
-        setUsers(u);
-        setTasks(t);
+        if (mounted) {
+          setUsers(u);
+          setTasks(t);
+        }
       } catch (err) {
-        if (err.status === 401) onUnauthenticated();
-        else setMessage(err.message || "Errore caricamento dati admin");
+        if (err.status === 401) {
+          // ⚠️ Chiama solo se la funzione è definita
+          if (typeof onUnauthenticated === "function") onUnauthenticated();
+        } else {
+          setMessage(err.message || "Errore caricamento dati admin");
+        }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
+
     load();
-  }, [token]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [token, onUnauthenticated]);
 
   const handleDeleteUser = async (id) => {
-    if (!confirm("Eliminare utente?")) return;
+    if (!window.confirm("Eliminare utente?")) return;
+
     try {
       await deleteAdminUser(token, id);
       setUsers((u) => u.filter((x) => x._id !== id));
     } catch (err) {
-      if (err.status === 401) onUnauthenticated();
-      else setMessage(err.message || "Errore eliminazione utente");
+      if (err.status === 401 && typeof onUnauthenticated === "function") {
+        onUnauthenticated();
+      } else {
+        setMessage(err.message || "Errore eliminazione utente");
+      }
     }
   };
 
   const handleDeleteTask = async (id) => {
-    if (!confirm("Eliminare task?")) return;
+    if (!window.confirm("Eliminare task?")) return;
+
     try {
       await deleteAdminTask(token, id);
       setTasks((t) => t.filter((x) => x._id !== id));
     } catch (err) {
-      if (err.status === 401) onUnauthenticated();
-      else setMessage(err.message || "Errore eliminazione task");
+      if (err.status === 401 && typeof onUnauthenticated === "function") {
+        onUnauthenticated();
+      } else {
+        setMessage(err.message || "Errore eliminazione task");
+      }
     }
   };
 
@@ -64,8 +94,11 @@ export default function AdminDashboard({ token, onUnauthenticated }) {
         tasks.map((t) => (t._id === id ? { ...t, ...updatedTask } : t))
       );
     } catch (err) {
-      if (err.status === 401) onUnauthenticated();
-      else setMessage(err.message || "Errore upload file");
+      if (err.status === 401 && typeof onUnauthenticated === "function") {
+        onUnauthenticated();
+      } else {
+        setMessage(err.message || "Errore upload file");
+      }
     }
   };
 

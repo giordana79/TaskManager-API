@@ -2,70 +2,77 @@ import React, { useEffect, useState } from "react";
 import AuthForm from "./components/AuthForm";
 import Dashboard from "./components/Dashboard";
 import AdminDashboard from "./components/AdminDashboard";
-
-import { getProfile } from "./lib/api";
+import PasswordResetRequest from "./components/PasswordResetRequest";
+import PasswordResetForm from "./components/PasswordResetForm";
+import { getProfile, logout } from "./lib/api";
 import "./styles.css";
 
-/**
- * App - gestisce autenticazione globale e tema (dark/light)
- * - conserva token in localStorage
- * - quando token è presente prova a ottenere profilo per validarlo
- */
 export default function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  // Usa accessToken invece di token
+  const [accessToken, setAccessToken] = useState(
+    localStorage.getItem("accessToken")
+  );
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [message, setMessage] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
-  // applica classe tema al body
+  // Applica tema
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  // quando token cambia, prova a validarlo ottenendo profilo
+  // Valida access token all'avvio
   useEffect(() => {
     const init = async () => {
-      if (!token) {
+      if (!accessToken) {
         setUser(null);
-        setIsAdmin(false);
         return;
       }
+
       setLoadingUser(true);
       try {
-        const profile = await getProfile(token);
+        const profile = await getProfile(accessToken);
         setUser(profile);
-        setIsAdmin(profile.role === "admin"); // ← controllo admin
       } catch (err) {
-        // token non valido o scaduto: rimuovilo e mostra messaggio
-        setMessage("Token non valido o scaduto. Effettua nuovamente il login.");
-        setToken(null);
-        localStorage.removeItem("token");
+        // Token non valido: pulisci storage
+        setMessage("Sessione scaduta. Effettua nuovamente il login.");
+        setAccessToken(null);
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         setUser(null);
-        setIsAdmin(false);
       } finally {
         setLoadingUser(false);
       }
     };
-    init();
-  }, [token]);
 
-  // signinHandler: salvare token da login/registrazione
-  const handleSignIn = (newToken, userProfile) => {
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
+    init();
+  }, [accessToken]);
+
+  // Salva access token dopo login
+  const handleSignIn = (newAccessToken, userProfile) => {
+    // accessToken e refreshToken già salvati in localStorage da api.js
+    setAccessToken(newAccessToken);
     setUser(userProfile || null);
     setMessage(null);
   };
 
-  // logout
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-    setUser(null);
+  // Logout con revoca refresh token
+  const handleLogout = async () => {
+    try {
+      await logout(accessToken);
+    } catch (err) {
+      console.error("Errore logout:", err);
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+    }
   };
+
+  // Routing semplice basato su path
+  const path = window.location.pathname;
+  const searchParams = new URLSearchParams(window.location.search);
 
   return (
     <div className="app">
@@ -88,7 +95,7 @@ export default function App() {
                   className="btn"
                   style={{ marginLeft: "0.5rem" }}
                 >
-                  Admin-Dashboard
+                  Admin
                 </a>
               )}
               <button className="btn" onClick={handleLogout}>
@@ -101,15 +108,37 @@ export default function App() {
 
       <main className="app-main">
         {message && <div className="info error">{message}</div>}
-        {window.location.pathname === "/admin" && user?.role === "admin" ? (
-          <AdminDashboard token={token} />
-        ) : !token ? (
+
+        {/* Rotta reset password */}
+        {path === "/reset-password" && searchParams.get("token") ? (
+          <PasswordResetForm
+            token={searchParams.get("token")}
+            onSuccess={() => {
+              setMessage("Password aggiornata! Effettua il login.");
+              window.location.href = "/";
+            }}
+          />
+        ) : path === "/forgot-password" ? (
+          <PasswordResetRequest
+            onSuccess={() =>
+              setMessage("Controlla la tua email per le istruzioni")
+            }
+          />
+        ) : path === "/admin" && user?.role === "admin" ? (
+          <AdminDashboard
+            token={accessToken}
+            onUnauthenticated={() => {
+              setMessage("Sessione scaduta, effettua il login.");
+              handleLogout();
+            }}
+          />
+        ) : !accessToken ? (
           <AuthForm onSignIn={handleSignIn} setMessage={setMessage} />
         ) : loadingUser ? (
           <div>Caricamento profilo...</div>
-        ) : isAdmin ? (
+        ) : user?.role === "admin" ? (
           <AdminDashboard
-            token={token}
+            token={accessToken}
             onUnauthenticated={() => {
               setMessage("Sessione scaduta, effettua il login.");
               handleLogout();
@@ -117,7 +146,7 @@ export default function App() {
           />
         ) : (
           <Dashboard
-            token={token}
+            token={accessToken}
             onUnauthenticated={() => {
               setMessage("Sessione scaduta, effettua il login.");
               handleLogout();
@@ -125,6 +154,7 @@ export default function App() {
           />
         )}
       </main>
+
       <footer className="app-footer">
         <small>© 2025 Task Dashboard</small>
       </footer>
