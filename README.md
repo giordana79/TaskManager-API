@@ -365,7 +365,7 @@ Si dovrebbe vedere:
 
 La cartella del frontend si chiama task-dashboard:
 
-[Vercel]("https://task-manager-api-ecru-kappa.vercel.app/")
+[Vercel] https://task-manager-api-ecru-kappa.vercel.app/
 
 ---
 
