@@ -30,11 +30,25 @@ const PORT = process.env.PORT || 3000;
 
 // MIDDLEWARE GLOBALI
 app.use(helmet());
-app.use(
-  cors({
-    origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000",
-  })
-);
+
+//app.use(
+// cors({
+//   origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000",
+//})
+//);
+
+// Definisci le opzioni CORS
+const corsOptions = {
+  // Specifica ESATTAMENTE l'URL del tuo frontend su Vercel
+  origin: "https://task-manager-api-ecru-kappa.vercel.app",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true, // Se gestisci cookie o sessioni
+  optionsSuccessStatus: 204,
+};
+
+// Applica il middleware CORS con le opzioni
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(requestLogger);
 
@@ -87,13 +101,16 @@ const start = async () => {
     const uploadDir = path.join(process.cwd(), "uploads");
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
-    app.listen(PORT, () =>
+    app.listen(PORT, () => {
+      // In locale mostra localhost, in produzione solo la porta
+      const host =
+        process.env.NODE_ENV === "development"
+          ? `http://localhost:${PORT}`
+          : `porta ${PORT}`;
       logger.info(
-        `🚀 Server avviato su http://localhost:${PORT} (env: ${
-          process.env.NODE_ENV || "development"
-        })`
-      )
-    );
+        `🚀 Server avviato su ${host} (env: ${process.env.NODE_ENV || "development"})`
+      );
+    });
   } catch (err) {
     logger.error("Errore avvio server: " + err.message);
     process.exit(1);

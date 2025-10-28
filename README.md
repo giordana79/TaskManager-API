@@ -123,22 +123,6 @@ E' possibile fare il try-it-out direttamente dalla UI.
 
 ---
 
-Per il deploy:
-
-[Render](https://taskmanager-api-mx5y.onrender.com)
-
-[Railway](https://taskmanager-api-production-a254.up.railway.app)
-
-[Render-Swagger UI](https://taskmanager-api-mx5y.onrender.com/api/docs)
-
-[Railway-Swagger UI](https://taskmanager-api-production-a254.up.railway.app/api/docs)
-
-[Render-check_health](https://taskmanager-api-mx5y.onrender.com/api/health)
-
-[Railway-check_health](https://taskmanager-api-production-a254.up.railway.app/api/health)
-
----
-
 ### Mappa dei livelli logici del progetto
 
 ```
@@ -195,10 +179,30 @@ project-root/
 
 - Middleware isAdmin protegge le rotte admin.
 
-- Rotte /api/admin/users, /api/admin/tasks, /api/admin/users/:id disponibili solo agli admin.
+Per testare le rotte bisogna loggarsi con l'utenza admin:
+
+- email:admin@example.com
+- password:admin123
+
+Nella root del backend sono presenti 2 script da eseguire con node createAdmin.js per creare un admin ed un altro script updateAdminPassword.js per aggiornare la password.
+
+Questo comando si esegue all'interno della cartella del backend per creare un admin:
+
+```
+node createAdmin.js
+```
+
+questo script serve per creare un utente con il ruolo di admin già hashato in MongoDB (nella root lato backend), poichè permettere agli utenti di scegliere role dal frontend può essere un rischio di sicurezza. Meglio creare admin solo tramite script o direttamente in DB.
+
+Con questo comando si esegue lo script che permette di aggiornare la password di admin:
+
+```
+node updateAdminPassword.js
+```
 
 ### Admin routes
 
+```
 GET /api/admin/users → lista utenti
 
 GET /api/admin/tasks → lista tutti i task
@@ -210,18 +214,10 @@ DELETE /api/admin/tasks/:id → elimina tasks con id
 PATCH /api/admin/tasks/:id → modifica tasks con id
 
 POST /api/admin/tasks/:id/upload → upload tasks con id
+```
 
-Tutte richiedono JWT admin nell’header Authorization.
-
----
-
-#### N.B.
-
-Questo comando si esegue all'interno della cartella del backend
-
-- node createAdmin.js
-
-  questo script serve per creare un utente con il ruolo di admin già hashato in MongoDB (nella root lato backend), poichè permettere agli utenti di scegliere role dal frontend può essere un rischio di sicurezza. Meglio creare admin solo tramite script o direttamente in DB.
+Tutte richiedono JWT admin nell’header Authorization e
+disponibili solo agli admin.
 
 ---
 
@@ -333,16 +329,16 @@ Content-Type: application/json
 
 **Test Frontend**
 
-Vai su http://localhost:5173 e prova:
+Andare su http://localhost:5173:
 
-1. Registrazione → Dovresti essere loggato automaticamente
+1. Registrazione → Si dovrebbe loggare automaticamente
 2. Logout → Click su "Logout"
-3. Login → Riprova a fare login
-4. Password dimenticata → Click sul link e testa il flusso
+3. Login → Riprovare a fare login
+4. Password dimenticata → Click sul link e testare il flusso
 
 **Verifica localStorage**
 
-Apri DevTools (F12) > Application > Local Storage > http://localhost:5173
+Aprire DevTools (F12) > Application > Local Storage > http://localhost:5173
 
 Si dovrebbe vedere:
 
@@ -351,8 +347,30 @@ Si dovrebbe vedere:
 
 **Note**
 
-- accessToken scade in 15 minuti → dopo dovrai usare refresh
-- refreshToken scade in 7 giorni → dopo dovrai fare login di nuovo
+- accessToken scade in 15 minuti → dopo si dovrà usare refresh
+- refreshToken scade in 7 giorni → dopo si dovrà fare nuovamente il login
 - Il frontend gestisce automaticamente il refresh quando accessToken scade
 
 ---
+
+### Deploy del backend
+
+[Render](https://taskmanager-api-mx5y.onrender.com)
+
+[Render-Swagger UI](https://taskmanager-api-mx5y.onrender.com/api/docs)
+
+[Render-check_health](https://taskmanager-api-mx5y.onrender.com/api/health)
+
+**Deploy del frontend su Vercel**
+
+La cartella del frontend si chiama task-dashboard:
+
+[Vercel]("https://task-manager-api-ecru-kappa.vercel.app/")
+
+---
+
+**NB**
+
+Quando si clicca su upload restituisce **Cannot GET /uploads/1761598556111-vespa.jpeg**.
+Questo accade perchè Render con piano gratuito non supporta file persistenti. I file caricati vengono eliminati ad ogni restart del server (la cartella /uploads dove sono contenuti i file è effimera).
+Si deve usare un cloud storage come Quick Start Cloudinary o AWS S3.
