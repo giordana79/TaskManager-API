@@ -82,7 +82,7 @@ Server in ascolto su: http://localhost:3000
 | Rotta                 | Metodo | Descrizione          | Autenticazione |
 | --------------------- | ------ | -------------------- | -------------- |
 | /api/auth/register    | POST   | Registrazione utente | No             |
-| /api/aut/login        | POST   | Login utente         | No             |
+| /api/auth/login       | POST   | Login utente         | No             |
 | /api/tasks            | GET    | Lista task utente    | Si(JWT)        |
 | /api/tasks            | POST   | Crea nuovo task      | Si             |
 | /api/tasks/:id        | PATCH  | Aggiorna task        | Si             |
@@ -357,15 +357,21 @@ Si dovrebbe vedere:
 
 [Render](https://taskmanager-api-mx5y.onrender.com)
 
+[Railway](https://taskmanager-api-production-a254.up.railway.app/)
+
 [Render-Swagger UI](https://taskmanager-api-mx5y.onrender.com/api/docs)
 
+[Railway-Swagger UI](https://taskmanager-api-production-a254.up.railway.app/api/docs/)
+
 [Render-check_health](https://taskmanager-api-mx5y.onrender.com/api/health)
+
+[Railway-check_health](https://taskmanager-api-production-a254.up.railway.app/api/health)
 
 **Deploy del frontend su Vercel**
 
 La cartella del frontend si chiama task-dashboard:
 
-[Vercel] https://task-manager-api-ecru-kappa.vercel.app/
+[Vercel] https://task-manager-api-ecru-kappa.vercel.app
 
 ---
 
